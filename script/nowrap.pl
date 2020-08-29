@@ -93,16 +93,26 @@ while (my $line = <>) {
             ++$nchars;
         }
         elsif ($c eq "\e") {
-            # handle escape sequences
-            substr($line, $i, length($line) - $i) =~ m/$ESCAPE_SEQUENCE_PATTERN/;
-            die "\$` should be empty, stopped" if $`;
-            my $esc_seq = $1;
-            # skip over the sequence
-            $i      += length($esc_seq) - 1; # -1 b/c of ++$i at loop top
-            $nchars += length($esc_seq);
-            # $cursor is unchanged
+            if (substr($line, $i, length($line) - $i) =~ m/$ESCAPE_SEQUENCE_PATTERN/) {
+              # handle escape sequences
+              die "\$` should be empty, stopped" if $`;
+              my $esc_seq = $1;
+              # skip over the sequence
+              $i      += length($esc_seq) - 1; # -1 b/c of ++$i at loop top
+              $nchars += length($esc_seq);
+              # $cursor is unchanged
 
-            $append = $esc_seq;
+              $append = $esc_seq;
+            }
+            elsif ($i + 1 < scalar(@chars) && $chars[$i + 1] ne "\e") {
+              $nchars += 2;
+              $append .= "${chars[++$i]}";
+              # $cursor is unchanged
+            }
+            else {
+              ++$nchars;
+              # $cursor is unchanged
+            }
         }
         else {
             # handle regular characters, including possible multicolumn
